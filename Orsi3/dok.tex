@@ -1,0 +1,107 @@
+\documentclass{article}
+\usepackage{times}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+
+\begin{document}
+	
+	
+	\title{ORSI 3. beadandó feladat - dokumentáció} 
+	\author{Kovács Bálint - FANW4Z}  %\texttt formats the text to a typewriter style font
+	\date{\today}  %\today is replaced with the current date
+	\maketitle
+	
+	\section{Feladat}
+	A bemeneti fájlok egyike, az \texttt{input\_matrices.txt} első sorában egy M pozitív egész olvasható, ennyi lineáris transzformációt kell elvégezni az objektumokat reprezentáló vektorokon, míg a következő 4xM sorban egy-egy 4x4es mátrix sorfolytonos reprezentációja található szóközökkel elválasztva. (4 egymás utáni sor jelent egy mátrixot.) A másik fájl, az \texttt{input\_points.txt} tartalmazza a pontok listáját, amikre alkalmazni kell az előbbi mátrixokkal való szorzást. Ennek első sora egy egész szám, N, ez után található N sor egy-egy 3 dimenziós vektor koordinátáit írja le (szintén szóközzel tagolva).
+	
+	Egy lehetséges \texttt{input\_matrices.txt} fájl: (Az alábbi mátrix-transzformációk pl. a 2x-es méretezés, 90-os forgatást az X tengely körül, majd a (3;-2;4) vektorral való eltolást jelentik.)
+	
+	\begin{verbatim}
+	3
+	2 0 0 0
+	0 2 0 0
+	0 0 2 0
+	0 0 0 1
+	1 0 0 0
+	0 0 -1 0
+	0 1 0 0
+	0 0 0 1
+	1 0 0 3
+	0 1 0 -2
+	0 0 1 4
+	0 0 0 1
+	\end{verbatim}
+	Egy lehetséges \texttt{input\_points.txt} fájl:
+	
+	\begin{verbatim}
+	8
+	1 1 1
+	1 1 -1
+	1 -1 1
+	1 -1 -1
+	-1 1 1
+	-1 1 -1
+	-1 -1 1
+	-1 -1 -1
+	\end{verbatim}
+	A számítást a későbbiekben megkönnyíti, ha a bemenet során a 3D-s vektorokat 4 dimenzióban reprezentáljátok, a negyedik koordinátát 1-re inicializálva. A mátrixszal való szorzás így lényegesen könnyebbé válik.
+	
+	A feladatban az adatcsatorna tételére visszavezetve kell megoldani a kitűzött problémát!
+	
+	A főfolyamat dolga, hogy beolvassa a mátrixokat, majd M threadet létrehozva, s azokat egy-egy transzformációnak megfeleletetve átadja nekik az megfelelő mátrixokat. A pontokat az első mátrixot reprezentáló szálnak kell elküldeni, majd az utolsó leképezést megvalósító gyerektől fogadja a megfelelően transzformált vektorokat. Ezek után írja soronként az \texttt{output.txt} fájlba az így kapott eredményt.
+	
+	Az indított szálak feladata, hogy fogadják a vektorokat a megelőző gyerektől (az első transzformáció esetén a mastertől), elvégezzék a mátrix-vektor szorzást, majd továbbítsák az így kapott részeredményt a következő folyamatnak. (Az utolsó számítás esetén a masternek.) A teljes memóriahasználat csökkentése érdekében használhattok külön szálat a beolvasás és kiírás elvégzésére.
+	
+	A dokumentációban mindenképp szerepeljen a visszavezetés mikéntje, azaz a megfeleltetés az absztrakt programhoz! A fejlesztői fejezetben szeretnénk mérésekkel alátámasztva látni, hogyan is skálázódott a program a különböző méretű bemenetek esetén! Egy lehetséges output.txt fájl:
+	
+	\begin{verbatim}
+	5 -4 6
+	5 0 6
+	5 -4 2
+	5 0 2
+	1 -4 6
+	1 0 6
+	1 -4 2
+	1 0 2
+	\end{verbatim}
+
+	
+	\section{Felhasználói dokumentáció}
+	
+	\subsection{Környezet}
+	A program futtatásához Erlang shell szükséges. 
+	
+	\subsection{Használat}
+	Fordítsunk \(c(matrices)\) paranccsal, majd futtathatjuk a \(matrices:start()\) függvényhívással. A fájl mellett kell elhelyezni az \texttt{input\_points.txt} fájlt, mely a transzformálandó pontokat, és az \texttt{input\_matrices.txt} fájlt, mely a transzformáló mátrixokat tartalmazza. Az eredményt az \texttt{output.txt} nevű fájlba írja a program, bementi sorrend szerint. Saját bemeneti fájlok esetén a mátrixok számának pontos megadása nem fontos, a pontoké viszont igen. Viszont  a helyes működéshez szükséges a többi sor megfelelő formátuma(ne legyen szóköz a sorok végén), és hogy ne legyen több üres sor a dokumentumban.
+	
+	\section{Fejlesztői dokumentáció}
+	
+	\subsection{A megoldás módja}
+	Egy mellékfolyamat beolvassa az \texttt{input\_points.txt} fájlt, míg a főfolyamat az \texttt{input\_matrices.txt}-vel teszi ugyanezt. Létrehozza a mátrixokat, és a pipeline-okat, elküldve a célfolyamat azonosítóját. A folyamatok végzik a transzformációt. A transzformált pontokat kiírjuk a folyamat végén. 
+	
+	\subsection{Implementáció}
+	A feladatot adatcsatorna tétel szerint oldjuk meg:
+	\begin{itemize}
+		\item $D =< d_{1}, ..., d_{n} >$ - a bemenő pontok halamaza
+		\item $x_{i}$ változatlan
+		\item $F=M_{m}\times...\times M_{0}$ - a mátrixszorzások egymásutánja
+		\item $f_{0}(v) = SKIP$ - nincs kezdeti művelet
+		\item$f_{i}(v) = M_{i}\times v (i \in 1..n)$ - az \(i\)-edik mátrixszal való szorzás
+	\end{itemize}
+	
+	\subsection{Fordítás}
+	Fordítsunk \(c(matrices)\) paranccsal, majd futtathatjuk a programot \(matrices:start()\) függvényhívással.
+	
+	\subsection{Tesztelés}
+	Tesztesetek és eredmények
+	\begin{itemize}
+		\item 20000 pont, 3 mátrix $\,\to\,$ 0,586s
+		\item 20000 pont, 6 mátrix $\,\to\,$  0,689s
+		\item 20000 pont, 12 mátrix $\,\to\,$  0,754s
+		\item 40000 pont, 3 mátrix $\,\to\,$   1,070s
+		\item 40000 pont, 6 mátrix $\,\to\,$   1,199s
+		\item 40000 pont, 12 mátrix $\,\to\,$   1,450s
+	\end{itemize}
+	Az tesztekben a mátrixok száma elhanyagolható a pontok számához képest. Így a mérések igazolják, hogy N+M-es az algoritmus: a pontok számának duplázásával a futási idő valóban a duplája lett, a mátrixok számának növekedésével pedig az idő körülbelül lineárisan nő.
+	
+\part{\end{document}}
